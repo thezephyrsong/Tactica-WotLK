@@ -63,7 +63,7 @@ local function RB_SnapshotForPreset()
     canSum    = RB.state.canSum and true or false,
     hideNeed  = RB.state.hideNeed and true or false,
     chglobal   = RB.state.chglobal and true or false,
-    chLFG     = RB.state.chLFG   and true or false,
+    chGuild     = RB.state.chGuild   and true or false,
     chYell    = RB.state.chYell  and true or false,
     interval  = RB.state.interval,
     gearScale = RB.state.gearScale,
@@ -288,7 +288,7 @@ RB.state = RB.state or {
   size=nil, size_selected=false,
   tanks=nil, healers=nil, srs=0,
   hr="", free="", canSum=false, hideNeed=false,
-  chglobal=false, chLFG=false, chYell=false,
+  chglobal=false, chGuild=false, chYell=false,
   auto=false, interval=120, running=false,
   gearScale=nil, autoGear=false,
   aiAutoRoles=false,
@@ -550,9 +550,9 @@ local function BuildLFM(raidLabelForMsg, raidSize, tanksWant, healersWant, srsWa
   return string.sub(shortHead .. needStr .. freeTxt, 1, 255)
 end
 
-local function Announce(msg, dryRun, chglobal, chLFG, chYell)
+local function Announce(msg, dryRun, chglobal, chGuild, chYell)
   if dryRun then RB_Print("|cff33ff99[Tactica]:|r " .. msg); return end
-  if (not chglobal and not chLFG and not chYell) then
+  if (not chglobal and not chGuild and not chYell) then
     RB_Print("|cffff6666[Tactica]:|r No channel selected (global/guild/Yell). Printing here instead:\n|cff33ff99[Tactica]:|r "..msg)
     return
   end
@@ -577,7 +577,7 @@ local function Announce(msg, dryRun, chglobal, chLFG, chYell)
     end
   end
 
-  local globalId, guildId
+  local globalId
   if chglobal then
     globalId = FindChanByName("global","Global","GLOBAL") or
               FallbackFind(function(n) return n=="global" end)
@@ -585,18 +585,11 @@ local function Announce(msg, dryRun, chglobal, chLFG, chYell)
       RB_Print("|cffff6666[Tactica]:|r You are not in |cffffff00Global|r. Use |cffffff00/join global|r.")
     end
   end
-  if chLFG then
-    guildId = FindChanByName("Guild","guild","guild","guild") or
-            FallbackFind(function(n) return n=="guild" or n=="guild" or n=="looking for group" end)
-    if not guildId then
-      RB_Print("|cffff6666[Tactica]:|r You are not in |cffffff00Guild|r. Use |cffffff00/join Guild|r.")
-    end
-  end
 
   local sent = false
   if globalId then SendChatMessage(msg, "CHANNEL", nil, globalId); sent = true end
-  if guildId   then SendChatMessage(msg, "CHANNEL", nil, guildId);   sent = true end
-  if chYell  then SendChatMessage(msg, "YELL");                  sent = true end
+  if chGuild    then SendChatMessage(msg, "GUILD"); sent = true end -- Fixed: Sends directly to native Guild Chat
+  if chYell   then SendChatMessage(msg, "YELL");                  sent = true end
   if not sent then RB_Print("|cff33ff99[Tactica]:|r " .. msg) end
 end
 
@@ -704,7 +697,7 @@ function RB.ApplySaved()
   RB.state.hideNeed = S.hideNeed and true or false
 
   RB.state.chglobal  = S.chglobal and true or false
-  RB.state.chLFG    = S.chLFG   and true or false
+  RB.state.chGuild    = S.chGuild   and true or false
   RB.state.chYell  = S.chYell  and true or false
   RB.state.aiAutoRoles  = S.aiAutoRoles  and true or false
   RB.state.aiAutoInvite = S.aiAutoInvite and true or false
@@ -730,7 +723,7 @@ function RB.SaveState()
   S.hr, S.free = st.hr, st.free
   S.canSum = st.canSum
   S.hideNeed = st.hideNeed
-  S.chglobal, S.chLFG, S.chYell = st.chglobal, st.chLFG, st.chYell
+  S.chglobal, S.chGuild, S.chYell = st.chglobal, st.chGuild, st.chYell
   S.auto, S.interval = st.auto, st.interval
   S.gearScale = st.gearScale
   S.autoGear  = st.autoGear
@@ -1153,7 +1146,7 @@ RB._poll:SetScript("OnUpdate", function()
     local _, short = EffectiveRaidNameAndLabel()
     if short then
       local msg = BuildLFM(short, RB.state.size, RB.state.tanks, RB.state.healers, RB.state.srs, RB.state.hr, RB.state.canSum, RB.state.free, RB.state.hideNeed)
-      Announce(msg, false, RB.state.chglobal, RB.state.chLFG, RB.state.chYell)
+      Announce(msg, false, RB.state.chglobal, RB.state.chGuild, RB.state.chYell)
       RB._lastSend = now
       RB._nextSend = now + gap
     end
@@ -1229,7 +1222,7 @@ local function ShowAutoConfirm()
     local _, short = EffectiveRaidNameAndLabel()
     if short then
       local msg = BuildLFM(short, RB.state.size, RB.state.tanks, RB.state.healers, RB.state.srs, RB.state.hr, RB.state.canSum, RB.state.free, RB.state.hideNeed)
-      Announce(msg, false, RB.state.chglobal, RB.state.chLFG, RB.state.chYell)
+      Announce(msg, false, RB.state.chglobal, RB.state.chGuild, RB.state.chYell)
       local now = GetTime and GetTime() or 0
       RB._lastSend = now
       RB._nextSend = now + (RB.state.interval or 120)
@@ -1302,7 +1295,7 @@ local function OnAnnounceClick()
     local _, short = EffectiveRaidNameAndLabel()
     if short then
       local msg = BuildLFM(short, RB.state.size, RB.state.tanks, RB.state.healers, RB.state.srs, RB.state.hr, RB.state.canSum, RB.state.free, RB.state.hideNeed)
-      Announce(msg, false, RB.state.chglobal, RB.state.chLFG, RB.state.chYell)
+      Announce(msg, false, RB.state.chglobal, RB.state.chGuild, RB.state.chYell)
       local now = GetTime and GetTime() or 0
       RB._lastSend = now
       RB._nextSend = now + (RB.state.interval or 120)
@@ -1323,7 +1316,7 @@ local function OnAnnounceClick()
 
   local _, short = EffectiveRaidNameAndLabel()
   local msg = BuildLFM(short, RB.state.size, RB.state.tanks, RB.state.healers, RB.state.srs, RB.state.hr, RB.state.canSum, RB.state.free, RB.state.hideNeed)
-  Announce(msg, false, RB.state.chglobal, RB.state.chLFG, RB.state.chYell)
+  Announce(msg, false, RB.state.chglobal, RB.state.chGuild, RB.state.chYell)
   RB._lastManual = now
 
   local ua = RB_GetUnassignedCount()
@@ -1365,7 +1358,7 @@ function TacticaRaidBuilder.AnnounceOnce()
   local _, short = EffectiveRaidNameAndLabel()
   if not short then return end
   local msg = BuildLFM(short, RBm.state.size, RBm.state.tanks, RBm.state.healers, RBm.state.srs, RBm.state.hr, RBm.state.canSum, RBm.state.free, RBm.state.hideNeed)
-  Announce(msg, false, RBm.state.chglobal, RBm.state.chLFG, RBm.state.chYell)
+  Announce(msg, false, RBm.state.chglobal, RBm.state.chGuild, RBm.state.chYell)
   RBm._lastManual = now
 
   local ua = RB_GetUnassignedCount()
@@ -1407,7 +1400,7 @@ local function OnClearClick()
   UIDropDownMenu_SetText(RB.ddESMode, RB.state.esMode or "Select Mode")
 
   RB.cbglobal:SetChecked(RB.state.chglobal)
-  RB.cbLFG:SetChecked(RB.state.chLFG)
+  RB.cbLFG:SetChecked(RB.state.chGuild)
   RB.cbYell:SetChecked(RB.state.chYell)
 
   -- STOP AUTO-ANNOUNCE (must keep this)
@@ -1795,7 +1788,7 @@ function RB.Open()
   RB.cbLFG = CreateFrame("CheckButton", "TacticaRBLFG", f, "UICheckButtonTemplate")
   RB.cbLFG:SetWidth(20); RB.cbLFG:SetHeight(20); RB.cbLFG:SetPoint("LEFT", RB.cbglobal, "RIGHT", 40, 0)
   getglobal("TacticaRBLFGText"):SetText("guild")
-  RB.cbLFG:SetChecked(RB.state.chLFG); RB.cbLFG:SetScript("OnClick", function() RB.state.chLFG = this:GetChecked() and true or false; RB.SaveState() end)
+  RB.cbLFG:SetChecked(RB.state.chGuild); RB.cbLFG:SetScript("OnClick", function() RB.state.chGuild = this:GetChecked() and true or false; RB.SaveState() end)
 
   RB.cbYell = CreateFrame("CheckButton", "TacticaRBYell", f, "UICheckButtonTemplate")
   RB.cbYell:SetWidth(20); RB.cbYell:SetHeight(20); RB.cbYell:SetPoint("LEFT", RB.cbLFG, "RIGHT", 30, 0)
@@ -2212,7 +2205,7 @@ function RB.LoadPreset(name)
   RB.state.canSum      = p.canSum and true or false
   RB.state.hideNeed    = p.hideNeed and true or false
   RB.state.chglobal     = p.chglobal and true or false
-  RB.state.chLFG       = p.chLFG   and true or false
+  RB.state.chGuild       = p.chGuild   and true or false
   RB.state.chYell      = p.chYell  and true or false
   RB.state.interval    = (p.interval == 60 or p.interval == 120 or p.interval == 300) and p.interval or 120
   RB.state.gearScale   = p.gearScale
@@ -2273,7 +2266,7 @@ function RB.LoadPreset(name)
 
   UIDropDownMenu_SetText(RB.ddInterval, (RB.state.interval==60) and "1" or (RB.state.interval==300 and "5" or "2"))
   if RB.cbglobal then RB.cbglobal:SetChecked(RB.state.chglobal) end
-  if RB.cbLFG   then RB.cbLFG:SetChecked(RB.state.chLFG)   end
+  if RB.cbLFG   then RB.cbLFG:SetChecked(RB.state.chGuild)   end
   if RB.cbYell  then RB.cbYell:SetChecked(RB.state.chYell) end
   if RB.cbCanSum then RB.cbCanSum:SetChecked(RB.state.canSum) end
   if RB.cbHideNeed then RB.cbHideNeed:SetChecked(RB.state.hideNeed) end
