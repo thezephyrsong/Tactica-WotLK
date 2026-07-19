@@ -589,7 +589,7 @@ local function Announce(msg, dryRun, chglobal, chLFG, chYell)
     guildId = FindChanByName("Guild","guild","guild","guild") or
             FallbackFind(function(n) return n=="guild" or n=="guild" or n=="looking for group" end)
     if not guildId then
-      RB_Print("|cffff6666[Tactica]:|r You are not in |cffffff00LookingForGroup|r. Use |cffffff00/join Guild|r.")
+      RB_Print("|cffff6666[Tactica]:|r You are not in |cffffff00Guild|r. Use |cffffff00/join Guild|r.")
     end
   end
 
