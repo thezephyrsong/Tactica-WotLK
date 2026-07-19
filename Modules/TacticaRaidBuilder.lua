@@ -553,7 +553,7 @@ end
 local function Announce(msg, dryRun, chglobal, chLFG, chYell)
   if dryRun then RB_Print("|cff33ff99[Tactica]:|r " .. msg); return end
   if (not chglobal and not chLFG and not chYell) then
-    RB_Print("|cffff6666[Tactica]:|r No channel selected (global/LFG/Yell). Printing here instead:\n|cff33ff99[Tactica]:|r "..msg)
+    RB_Print("|cffff6666[Tactica]:|r No channel selected (global/guild/Yell). Printing here instead:\n|cff33ff99[Tactica]:|r "..msg)
     return
   end
 
@@ -577,7 +577,7 @@ local function Announce(msg, dryRun, chglobal, chLFG, chYell)
     end
   end
 
-  local globalId, lfgId
+  local globalId, guildId
   if chglobal then
     globalId = FindChanByName("global","Global","GLOBAL") or
               FallbackFind(function(n) return n=="global" end)
@@ -586,16 +586,16 @@ local function Announce(msg, dryRun, chglobal, chLFG, chYell)
     end
   end
   if chLFG then
-    lfgId = FindChanByName("LookingForGroup","lookingforgroup","LFG","lfg") or
-            FallbackFind(function(n) return n=="lfg" or n=="lookingforgroup" or n=="looking for group" end)
-    if not lfgId then
-      RB_Print("|cffff6666[Tactica]:|r You are not in |cffffff00LookingForGroup|r. Use |cffffff00/join LookingForGroup|r.")
+    guildId = FindChanByName("Guild","guild","guild","guild") or
+            FallbackFind(function(n) return n=="guild" or n=="guild" or n=="looking for group" end)
+    if not guildId then
+      RB_Print("|cffff6666[Tactica]:|r You are not in |cffffff00LookingForGroup|r. Use |cffffff00/join Guild|r.")
     end
   end
 
   local sent = false
   if globalId then SendChatMessage(msg, "CHANNEL", nil, globalId); sent = true end
-  if lfgId   then SendChatMessage(msg, "CHANNEL", nil, lfgId);   sent = true end
+  if guildId   then SendChatMessage(msg, "CHANNEL", nil, guildId);   sent = true end
   if chYell  then SendChatMessage(msg, "YELL");                  sent = true end
   if not sent then RB_Print("|cff33ff99[Tactica]:|r " .. msg) end
 end
@@ -1794,7 +1794,7 @@ function RB.Open()
 
   RB.cbLFG = CreateFrame("CheckButton", "TacticaRBLFG", f, "UICheckButtonTemplate")
   RB.cbLFG:SetWidth(20); RB.cbLFG:SetHeight(20); RB.cbLFG:SetPoint("LEFT", RB.cbglobal, "RIGHT", 40, 0)
-  getglobal("TacticaRBLFGText"):SetText("LFG")
+  getglobal("TacticaRBLFGText"):SetText("guild")
   RB.cbLFG:SetChecked(RB.state.chLFG); RB.cbLFG:SetScript("OnClick", function() RB.state.chLFG = this:GetChecked() and true or false; RB.SaveState() end)
 
   RB.cbYell = CreateFrame("CheckButton", "TacticaRBYell", f, "UICheckButtonTemplate")
