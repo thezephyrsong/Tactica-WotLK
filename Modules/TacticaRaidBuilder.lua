@@ -68,9 +68,10 @@ local function RB_SnapshotForPreset()
     interval  = RB.state.interval,
     gearScale = RB.state.gearScale,
     autoGear  = RB.state.autoGear and true or false,
-	aiAutoRoles  = RB.state.aiAutoRoles and true or false,
+    aiAutoRoles  = RB.state.aiAutoRoles and true or false,
     aiAutoInvite = RB.state.aiAutoInvite and true or false,
     discordLink = RB.state.discordLink or "",
+    flexMode  = RB.state.flexMode and true or false,
   }
 end
 
@@ -295,11 +296,12 @@ RB.state = RB.state or {
   aiAutoInvite=false,
   srLink="",           -- session-only
   discordLink="",
+  flexMode=false,
 }
 RB.frame = RB.frame or nil
 RB.ddRaid, RB.ddWBoss, RB.ddESMode, RB.ddSize = nil, nil, nil, nil
 RB.ddTanks, RB.ddHealers, RB.ddSRs = nil, nil, nil
-RB.cbglobal, RB.cbLFG, RB.cbYell, RB.cbAuto, RB.cbCanSum, RB.cbHideNeed = nil, nil, nil, nil, nil, nil
+RB.cbglobal, RB.cbLFG, RB.cbYell, RB.cbAuto, RB.cbCanSum, RB.cbHideNeed, RB.cbFlexMode = nil, nil, nil, nil, nil, nil, nil
 RB.ddInterval = nil
 RB.editHR, RB.editFree = nil, nil
 RB.lblNotes, RB.lblPreview, RB.lblHint = nil, nil, nil
@@ -445,6 +447,7 @@ local function BuildNeedString(raidSize, tanksWant, healersWant, hideNeed)
   local inRaidEff = 0
   local name
   for name,_ in pairs(rosterSet) do if not excl[name] then inRaidEff = inRaidEff + 1 end end
+  
   local needM = raidSize and (raidSize - inRaidEff) or 0
   if needM < 0 then needM = 0 end
 
@@ -467,14 +470,16 @@ local function BuildNeedString(raidSize, tanksWant, healersWant, hideNeed)
   local dBudget = (raidSize or 0) - (tanksWant or 0) - (healersWant or 0); if dBudget < 0 then dBudget = 0 end
   local needD = dBudget - cd; if needD < 0 then needD = 0 end
 
-  -- If player "over-invite" tanks/healers, total remaining slots (needM) shrinks. Clamp role requests so player never ask for more people than can actually fit.
-  local slotsLeft = needM
-  if slotsLeft < 0 then slotsLeft = 0 end
-  if needT > slotsLeft then needT = slotsLeft end
-  slotsLeft = slotsLeft - needT
-  if needH > slotsLeft then needH = slotsLeft end
-  slotsLeft = slotsLeft - needH
-  if needD > slotsLeft then needD = slotsLeft end
+  -- Skip strict ceiling allocation clamping entirely if Flex Mode is enabled
+  if not RB.state.flexMode then
+    local slotsLeft = needM
+    if slotsLeft < 0 then slotsLeft = 0 end
+    if needT > slotsLeft then needT = slotsLeft end
+    slotsLeft = slotsLeft - needT
+    if needH > slotsLeft then needH = slotsLeft end
+    slotsLeft = slotsLeft - needH
+    if needD > slotsLeft then needD = slotsLeft end
+  end
 
   local parts = {}
   if needT > 0 then table.insert(parts, hideNeed and "Tank"   or (needT .. "xTanks"))   end
@@ -484,6 +489,8 @@ local function BuildNeedString(raidSize, tanksWant, healersWant, hideNeed)
   local needStr = ""
   if table.getn(parts) > 0 then
     needStr = " - Need: " .. table.concat(parts, ", ")
+  elseif RB.state.flexMode then
+    needStr = " - Need: More DPS / Fillers"
   end
 
   return needM, needStr
@@ -528,20 +535,20 @@ local function BuildLFM(raidLabelForMsg, raidSize, tanksWant, healersWant, srsWa
   local freeTxt= (freeText and freeText ~= "") and (" - " .. freeText) or ""
 
   local head
--- If hideNeed OR needM==0, show plain "LFM"
-	if hideNeed or needM == 0 then
-	  head = "LFM for " .. raidLabelForMsg .. sumTxt
-	else
-	  head = "LF" .. needM .. "M for " .. raidLabelForMsg .. sumTxt
-	end
+  -- If hideNeed OR needM==0, show plain "LFM"
+  if hideNeed or needM == 0 then
+    head = "LFM for " .. raidLabelForMsg .. sumTxt
+  else
+    head = "LF" .. needM .. "M for " .. raidLabelForMsg .. sumTxt
+  end
 
   local lootTxt = hasLootRules and (" - " .. srTxt .. " > MS > OS") or ""
   local msg = head .. lootTxt .. hrTxt .. needStr .. freeTxt
   if string.len(msg) <= 255 then return msg end
 
   local shortHead = (hideNeed or needM == 0)
-	  and ("LFM@" .. raidLabelForMsg .. sumTxt)
-	  or  ("LF" .. needM .. "M@" .. raidLabelForMsg .. sumTxt)
+      and ("LFM@" .. raidLabelForMsg .. sumTxt)
+      or  ("LF" .. needM .. "M@" .. raidLabelForMsg .. sumTxt)
   local lootTxtShort = hasLootRules and (" - " .. srTxt .. ">MS>OS") or ""
   local msg2  = shortHead .. lootTxtShort .. hrTxt .. needStr .. freeTxt
   if string.len(msg2) <= 255 then return msg2 end
@@ -695,6 +702,7 @@ function RB.ApplySaved()
   RB.state.free     = S.free  or ""
   RB.state.canSum   = S.canSum and true or false
   RB.state.hideNeed = S.hideNeed and true or false
+  RB.state.flexMode = S.flexMode and true or false
 
   RB.state.chglobal  = S.chglobal and true or false
   RB.state.chGuild    = S.chGuild   and true or false
@@ -729,6 +737,7 @@ function RB.SaveState()
   S.autoGear  = st.autoGear
   S.aiAutoRoles  = st.aiAutoRoles  and true or false
   S.aiAutoInvite = st.aiAutoInvite and true or false
+  S.flexMode = st.flexMode
 end
 
 local function RequirementsComplete()
@@ -1096,6 +1105,24 @@ end
 -------------------------------------------------
 local function RB_CheckAndStopIfFull()
   if not RB.state or not RB.state.running then return false end
+
+  -- If Flex Mode is active, only auto-shutoff if the hard maximum group cap (40) is reached
+  if RB.state.flexMode then
+    local _, currentCount = RB_RaidRosterSet()
+    if currentCount >= 40 then
+      RB.state.running = false
+      RB.state.auto    = false
+      RB._warnOk       = false
+      RB._nextSend     = nil
+      if RB.cbAuto then RB.cbAuto:SetChecked(false) end
+      RB.SaveState()
+      RB.UpdateButtonsForRunning()
+      RB_Print("|cff33ff99[Tactica]:|r Auto-announce disabled: Raid has hit the maximum instance cap (40/40).")
+      return true
+    end
+    return false
+  end
+
   local target = RB.state.size
   if not target or target <= 0 then return false end
 
@@ -1420,6 +1447,9 @@ local function OnClearClick()
 
   RB.cbCanSum:SetChecked(RB.state.canSum)
   if RB.cbHideNeed then RB.cbHideNeed:SetChecked(RB.state.hideNeed) end
+  if RB.cbFlexMode then RB.cbFlexMode:SetChecked(false) end
+  RB.state.flexMode = false
+  
   RB.editHR:SetText(RB.state.hr or "")
   RB.editFree:SetText(RB.state.free or "")
 
@@ -1780,6 +1810,17 @@ function RB.Open()
   getglobal("TacticaRBHideNeedText"):SetText("Hide #")
   RB.cbHideNeed:SetChecked(RB.state.hideNeed); RB.cbHideNeed:SetScript("OnClick", OnHideNeedClick)
 
+  -- New UI Hook: Flex Mode CheckButton placed dynamically to the right of Hide #
+  RB.cbFlexMode = CreateFrame("CheckButton", "TacticaRBFlexMode", f, "UICheckButtonTemplate")
+  RB.cbFlexMode:SetWidth(20); RB.cbFlexMode:SetHeight(20); RB.cbFlexMode:SetPoint("LEFT", RB.cbHideNeed, "RIGHT", 55, 0)
+  getglobal("TacticaRBFlexModeText"):SetText("Flex")
+  RB.cbFlexMode:SetChecked(RB.state.flexMode)
+  RB.cbFlexMode:SetScript("OnClick", function()
+    RB.state.flexMode = this:GetChecked() and true or false
+    RB.SaveState()
+    RB.RefreshPreview()
+  end)
+
   RB.cbglobal = CreateFrame("CheckButton", "TacticaRBglobal", f, "UICheckButtonTemplate")
   RB.cbglobal:SetWidth(20); RB.cbglobal:SetHeight(20); RB.cbglobal:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -282)
   getglobal("TacticaRBglobalText"):SetText("global")
@@ -1838,30 +1879,30 @@ function RB.Open()
   sep3:SetPoint("TOPRIGHT", f, "TOPRIGHT", -16, -330)
   sep3:SetTexture(1,1,1); if sep3.SetVertexColor then sep3:SetVertexColor(1,1,1,0.25) end
 
--- Auto-Assign
-RB.cbRoleAssign = CreateFrame("CheckButton", "TacticaRBRoleAssign", f, "UICheckButtonTemplate")
-RB.cbRoleAssign:SetWidth(20); RB.cbRoleAssign:SetHeight(20)
-RB.cbRoleAssign:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -340)
-getglobal("TacticaRBRoleAssignText"):SetText("Auto-Assign")
-RB.cbRoleAssign:SetChecked(RB.state.aiAutoRoles and true or false)
-RB.cbRoleAssign:SetScript("OnClick", function()
-  RB.state.aiAutoRoles = this:GetChecked() and true or false
-  RB.SaveState()
-  RB_AutoInviteUpdateFromUI("autoRoles")
-end)
+  -- Auto-Assign
+  RB.cbRoleAssign = CreateFrame("CheckButton", "TacticaRBRoleAssign", f, "UICheckButtonTemplate")
+  RB.cbRoleAssign:SetWidth(20); RB.cbRoleAssign:SetHeight(20)
+  RB.cbRoleAssign:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -340)
+  getglobal("TacticaRBRoleAssignText"):SetText("Auto-Assign")
+  RB.cbRoleAssign:SetChecked(RB.state.aiAutoRoles and true or false)
+  RB.cbRoleAssign:SetScript("OnClick", function()
+    RB.state.aiAutoRoles = this:GetChecked() and true or false
+    RB.SaveState()
+    RB_AutoInviteUpdateFromUI("autoRoles")
+  end)
 
--- Auto-Invite
-RB.cbAutoInvite = CreateFrame("CheckButton", "TacticaRBAutoInvite", f, "UICheckButtonTemplate")
-RB.cbAutoInvite:SetWidth(20); RB.cbAutoInvite:SetHeight(20)
-RB.cbAutoInvite:SetPoint("LEFT", RB.cbRoleAssign, "RIGHT", 70, 0)
-getglobal("TacticaRBAutoInviteText"):SetText("Auto-Invite")
-RB.cbAutoInvite:SetChecked(RB.state.aiAutoInvite and true or false)
+  -- Auto-Invite
+  RB.cbAutoInvite = CreateFrame("CheckButton", "TacticaRBAutoInvite", f, "UICheckButtonTemplate")
+  RB.cbAutoInvite:SetWidth(20); RB.cbAutoInvite:SetHeight(20)
+  RB.cbAutoInvite:SetPoint("LEFT", RB.cbRoleAssign, "RIGHT", 70, 0)
+  getglobal("TacticaRBAutoInviteText"):SetText("Auto-Invite")
+  RB.cbAutoInvite:SetChecked(RB.state.aiAutoInvite and true or false)
 
-RB.cbAutoInvite:SetScript("OnClick", function()
-  RB.state.aiAutoInvite = this:GetChecked() and true or false
-  RB.SaveState()
-  RB_AutoInviteUpdateFromUI("autoInvite")
-end)
+  RB.cbAutoInvite:SetScript("OnClick", function()
+    RB.state.aiAutoInvite = this:GetChecked() and true or false
+    RB.SaveState()
+    RB_AutoInviteUpdateFromUI("autoInvite")
+  end)
 
   -- Gear Scale dropdown (right of Auto-Invite)
   RB.ddGearScale = CreateFrame("Frame", "TacticaRBGearScale", f, "UIDropDownMenuTemplate")
@@ -1936,31 +1977,31 @@ end)
     RB_Print("|cff33ff99[Tactica]:|r Auto-Gearcheck |cff00ff00ENABLED|r.")
   end
 
-RB.cbGear:SetScript("OnClick", function()
-  local prev = RB.state.autoGear and true or false
-  local want = this:GetChecked() and true or false
+  RB.cbGear:SetScript("OnClick", function()
+    local prev = RB.state.autoGear and true or false
+    local want = this:GetChecked() and true or false
 
-  if want and RB.state.gearScale == nil then
-    this:SetChecked(false)
-    RB.state.autoGear = false
+    if want and RB.state.gearScale == nil then
+      this:SetChecked(false)
+      RB.state.autoGear = false
+      RB.SaveState()
+      RB_SyncInviteExtras()
+      PrintGearHowItWorks()
+      RB_Print("|cffff6666[Tactica]:|r You need to select |cffffff00Required Gear|r (minimum gear scale) before enabling Auto-Gearcheck.")
+      return
+    end
+
+    RB.state.autoGear = want
     RB.SaveState()
     RB_SyncInviteExtras()
-    PrintGearHowItWorks()
-    RB_Print("|cffff6666[Tactica]:|r You need to select |cffffff00Required Gear|r (minimum gear scale) before enabling Auto-Gearcheck.")
-    return
-  end
 
-  RB.state.autoGear = want
-  RB.SaveState()
-  RB_SyncInviteExtras()
-
-  if want and not prev then
-    PrintGearHowItWorks()
-    PrintGearEnabled()
-  elseif (not want) and prev then
-    RB_Print("|cff33ff99[Tactica]:|r Auto-Gearcheck |cffff5555DISABLED|r.")
-  end
-end)
+    if want and not prev then
+      PrintGearHowItWorks()
+      PrintGearEnabled()
+    elseif (not want) and prev then
+      RB_Print("|cff33ff99[Tactica]:|r Auto-Gearcheck |cffff5555DISABLED|r.")
+    end
+  end)
 
   -- Grey note explaining Auto-Assign vs Auto-Invite
   RB.lblAIExplain = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -1969,7 +2010,6 @@ end)
   if RB.lblAIExplain.SetTextColor then RB.lblAIExplain:SetTextColor(0.7,0.7,0.7) end
   RB.lblAIExplain:SetText("Note: Auto-Assign will auto-set roles in raid roster. Auto-Invite will invite on intent.")
  
-
   -- SR & DISCORD SECTION
   RB.titleSRD = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   RB.titleSRD:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -395)
@@ -2211,6 +2251,7 @@ function RB.LoadPreset(name)
   RB.state.gearScale   = p.gearScale
   RB.state.autoGear    = p.autoGear and true or false
   RB.state.discordLink = p.discordLink or ""
+  RB.state.flexMode    = p.flexMode and true or false
   
   if p.aiAutoRoles ~= nil then
     RB.state.aiAutoRoles = p.aiAutoRoles and true or false
@@ -2270,6 +2311,7 @@ function RB.LoadPreset(name)
   if RB.cbYell  then RB.cbYell:SetChecked(RB.state.chYell) end
   if RB.cbCanSum then RB.cbCanSum:SetChecked(RB.state.canSum) end
   if RB.cbHideNeed then RB.cbHideNeed:SetChecked(RB.state.hideNeed) end
+  if RB.cbFlexMode then RB.cbFlexMode:SetChecked(RB.state.flexMode) end
   if RB.editHR  then RB.editHR:SetText(RB.state.hr or "") end
   if RB.editFree then RB.editFree:SetText(RB.state.free or "") end
   if RB.editDiscordLink then RB.editDiscordLink:SetText(RB.state.discordLink or "") end
@@ -2297,356 +2339,4 @@ function RB.RemovePreset(name)
   if not db[name] then RB_Print("|cffff6666[Tactica]:|r Preset not found: "..tostring(name)); return end
   db[name] = nil
   RB_Print("|cff33ff99[Tactica]:|r Preset removed: |cffffff00"..name.."|r.")
-end
-
--------------------------------------------------
--- Extra slash shortcut
--- Use: /ttlfm
--------------------------------------------------
-SLASH_TACTICARBLFM1 = "/ttlfm"
-SlashCmdList["TACTICARBLFM"] = function(msg)
-  TacticaRaidBuilder.AnnounceOnce()
-end
-
--------------------------------------------------
--- Leader detection popup with per-raid "don't show again"
--------------------------------------------------
-local RB_leaderEvt = CreateFrame("Frame")
-RB_leaderEvt:RegisterEvent("RAID_ROSTER_UPDATE")
-RB_leaderEvt:RegisterEvent("PLAYER_ENTERING_global")
-
--- ensure SavedVariable exists
-TacticaDB = TacticaDB or {}
-TacticaDB.disablePopupThisRaid = TacticaDB.disablePopupThisRaid or false
-
-local selfWasInRaid = false
-local popupShownThisRaid = false
-
-local function RB_LeaderNameForNoneLabel()
-    local n = GetNumRaidMembers and GetNumRaidMembers() or 0
-    for i=1,n do
-      local nm, rank = GetRaidRosterInfo(i)
-      if rank == 2 then return nm or "raidlead" end
-    end
-    return "raidlead"
-end
-
-local function RB_RaidNamesInOrder()
-    local names = {}
-    local leader = RB_LeaderNameForNoneLabel()
-    local n = GetNumRaidMembers and GetNumRaidMembers() or 0
-    for i=1,n do
-      local nm = GetRaidRosterInfo(i)
-      if nm and nm ~= "" and nm ~= leader then table.insert(names, nm) end
-    end
-    return names
-end
-
-local function RB_SetDropdownEnabled(dd, enabled)
-    if not dd then return end
-    if dd.EnableMouse then dd:EnableMouse(enabled and true or false) end
-    dd:SetAlpha(enabled and 1.0 or 0.55)
-    local btn = dd.GetName and getglobal(dd:GetName().."Button") or nil
-    if btn then
-      if enabled and btn.Enable then btn:Enable()
-      elseif (not enabled) and btn.Disable then btn:Disable() end
-    end
-end
-
-local function RB_ShowLeaderPopup()
-    -- do not show if Raid Builder is already open
-    if RB.frame and RB.frame:IsShown() then return end
-    if RB._leaderPopup and RB._leaderPopup:IsShown() then return end
-    if TacticaDB.disablePopupThisRaid then return end
-
-    popupShownThisRaid = true
-
-    local f = CreateFrame("Frame", "TacticaLeaderPopup", UIParent)
-    RB._leaderPopup = f
-    f:SetWidth(350); f:SetHeight(255)
-    f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-    f:SetBackdrop({
-        bgFile   = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true, tileSize = 16, edgeSize = 32,
-        insets = { left=11, right=12, top=12, bottom=11 }
-    })
-    f:SetBackdropColor(0, 0, 0, 1)
-    f:SetBackdropBorderColor(1, 1, 1, 1)
-    f:SetFrameStrata("FULLSCREEN_DIALOG")
-    f:SetToplevel(true)
-    f:EnableMouse(true)
-
-    local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", f, "TOP", 0, -20)
-    title:SetText("TACTICA RAID BUILDER")
-    title:SetTextColor(0.2, 1.0, 0.6)
-
-    local text = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    text:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -45)
-    text:SetWidth(360)
-    text:SetJustifyH("LEFT")
-    text:SetText("You are forming a raid.\nWould you like Tactica to assist?\n\nFeatures:\n• Auto role-assignment\n• Auto Gearchecks\n• Auto-invite (use /ttai)\n• Auto announcements\n• Auto LFM-message updates")
-
-    local mlLbl = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    mlLbl:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -162)
-    if mlLbl.SetTextColor then mlLbl:SetTextColor(1.0, 0.82, 0) end
-    mlLbl:SetText("Preset Masterlooter:")
-
-    local mlDD = CreateFrame("Frame", "TacticaRBLeaderPopupML", f, "UIDropDownMenuTemplate")
-    mlDD:SetPoint("TOPLEFT", f, "TOPLEFT", 120, -154)
-    UIDropDownMenu_SetWidth(mlDD, 160)
-    local canEditML = (IsRaidLeader and IsRaidLeader() == 1) and true or false
-    UIDropDownMenu_Initialize(mlDD, function()
-      UIDropDownMenu_AddButton({
-        text = "None/"..(RB_LeaderNameForNoneLabel() or "raidlead"),
-        func = function()
-          if not canEditML then return end
-          if type(TacticaRaidRoles_SetPresetMasterLooter) == "function" then
-            TacticaRaidRoles_SetPresetMasterLooter("")
-          end
-          UIDropDownMenu_SetText(mlDD, "None/"..(RB_LeaderNameForNoneLabel() or "raidlead"))
-        end
-      })
-      local names = RB_RaidNamesInOrder()
-      for i=1, table.getn(names) do
-        local nm = names[i]
-        UIDropDownMenu_AddButton({
-          text = nm,
-          func = function()
-            if not canEditML then return end
-            if type(TacticaRaidRoles_SetPresetMasterLooter) == "function" then
-              TacticaRaidRoles_SetPresetMasterLooter(nm)
-            end
-            UIDropDownMenu_SetText(mlDD, nm)
-          end
-        })
-      end
-    end)
-    local currentML = (type(TacticaRaidRoles_GetPresetMasterLooter) == "function" and TacticaRaidRoles_GetPresetMasterLooter()) or ""
-    UIDropDownMenu_SetText(mlDD, (currentML ~= "" and currentML) or ("None/"..(RB_LeaderNameForNoneLabel() or "raidlead")))
-    RB_SetDropdownEnabled(mlDD, canEditML)
-
-    -- checkbox
-    local checkbox = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
-    checkbox:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 20, 40)
-
-    local label = f:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    label:SetPoint("LEFT", checkbox, "RIGHT", 5, 0)
-    label:SetText("Don't show this message again this raid")
-
-    checkbox:SetScript("OnClick", function()
-    TacticaDB.disablePopupThisRaid = this:GetChecked()
-	end)
-
-
-    -- No button
-    local btnNo = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-    btnNo:SetWidth(140); btnNo:SetHeight(24)
-    btnNo:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 20, 15)
-    btnNo:SetText("No, manage manually")
-    btnNo:SetScript("OnClick", function() f:Hide() end)
-
-    -- Yes button
-    local btnYes = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-    btnYes:SetWidth(160); btnYes:SetHeight(24)
-    btnYes:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -20, 15)
-    btnYes:SetText("Yes, open Raid Builder")
-    btnYes:SetScript("OnClick", function()
-        f:Hide()
-        if RB.Open then RB.Open() end
-    end)
-end
-
--- handle events
-RB_leaderEvt:SetScript("OnEvent", function()
-    local num = GetNumRaidMembers and GetNumRaidMembers() or 0
-	local inRaid = num > 0
-
-    -- Reset per-raid popup flag when leaving raid
-    if not inRaid and selfWasInRaid then
-        TacticaDB.disablePopupThisRaid = false
-        popupShownThisRaid = false
-    end
-    selfWasInRaid = inRaid
-
-    if not inRaid then return end
-
-    -- only show popup if not already shown this raid
-    if popupShownThisRaid or TacticaDB.disablePopupThisRaid then return end
-
-    local playerName = UnitName("player")
-    if not playerName then return end
-
-    for i = 1, num do
-        local rname, rank = GetRaidRosterInfo(i)
-        if rname and rname == playerName and (rank == 1 or rank == 2) then
-            RB_ShowLeaderPopup()
-            break
-        end
-    end
-end)
-
--------------------------------------------------
--- Exclude List UI (session-only; affects LFM counts)
--------------------------------------------------
-RB._exclude = RB._exclude or {}
-
-local function RB_SortedRaidNames()
-  local names = {}
-  local n = GetNumRaidMembers and GetNumRaidMembers() or 0
-  local i
-  for i=1,n do
-    local nm = GetRaidRosterInfo(i)
-    if nm and nm ~= "" then table.insert(names, nm) end
-  end
-  table.sort(names, function(a,b) return string.lower(a) < string.lower(b) end)
-  return names
-end
-
-function RB_RefreshExcludeList()
-  if not RB.excl or not RB.excl.child then return end
-  local p = RB.excl
-  -- wipe old
-  local i
-  if p.items then
-    for i=1, table.getn(p.items) do
-      local it = p.items[i]
-      if it and it.cb then it.cb:Hide(); it.cb:SetParent(nil) end
-      p.items[i] = nil
-    end
-  end
-  p.items = {}
-  local list = RB_SortedRaidNames()
-  local y = -2
-  for i=1, table.getn(list) do
-    local nm = list[i]
-    local cb = CreateFrame("CheckButton", nil, p.child, "UICheckButtonTemplate")
-    cb:SetPoint("TOPLEFT", p.child, "TOPLEFT", 4, y)
-    y = y - 22
-    local font = cb:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    font:SetPoint("LEFT", cb, "RIGHT", 4, 0)
-    font:SetText(nm)
-    cb:SetChecked(RB._exclude and RB._exclude[nm] or false)
-    p.items[i] = { cb=cb, name=nm }
-  end
-  p.child:SetHeight(-y + 6)
-  if RB.excl and RB.excl.scroll and RB.excl.scroll.UpdateScrollChildRect then
-    RB.excl.scroll:UpdateScrollChildRect()
-  end
-end
-
-function RB_OpenExcludeList()
-  if not RB.frame then return end
-  if RB.excl then
-    RB.excl:Show()
-    RB_RefreshExcludeList()
-    return
-  end
-
-  local f = RB.frame
-  local p = CreateFrame("Frame", "TacticaRBExclude", f)
-  RB.excl = p
-  p:SetWidth(260); p:SetHeight(300)
-  p:SetPoint("CENTER", f, "CENTER", 0, 0)
-  p:SetBackdrop({
-    bgFile   = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-    tile = true, tileSize = 16, edgeSize = 32,
-    insets = { left=11, right=12, top=12, bottom=11 }
-  })
-  p:SetBackdropColor(0, 0, 0, 1)
-  p:SetBackdropBorderColor(1, 1, 1, 1)
-  p:SetFrameStrata("FULLSCREEN_DIALOG")
-  p:SetToplevel(true)
-  p:EnableMouse(true)
-
-  local t = p:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-  t:SetPoint("TOP", p, "TOP", 0, -15)
-  t:SetText("Exclude List")
-  t:SetTextColor(0.2, 1.0, 0.6)
-
-  local sub = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  sub:SetPoint("TOPLEFT", p, "TOPLEFT", 14, -34)
-  sub:SetWidth(232); sub:SetJustifyH("LEFT")
-  sub:SetText("Any players checked in the list below will not count to the LFM message. Neither the total needed or role specific.")
-
-  -- ONE scrollframe (create this first)
-  local scrollFrame = CreateFrame("ScrollFrame", "TacticaRBExcludeScroll", p, "UIPanelScrollFrameTemplate")
-  scrollFrame:SetPoint("TOPLEFT", p, "TOPLEFT", 16, -75)
-  scrollFrame:SetWidth(205); scrollFrame:SetHeight(180)
-  p.scroll = scrollFrame
-
-  -- Pretty background around the scroll area
-  local bg = CreateFrame("Frame", nil, p)
-  bg:SetPoint("TOPLEFT",     scrollFrame, "TOPLEFT",     -5,  5)
-  bg:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT",  5, -5)
-  bg:SetBackdrop({
-    bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true, tileSize = 16, edgeSize = 16,
-    insets = { left=4, right=4, top=4, bottom=4 }
-  })
-  if bg.SetBackdropColor then bg:SetBackdropColor(0, 0, 0, 0.5) end
-
-  -- Child that will hold the checkboxes
-  local child = CreateFrame("Frame", nil, scrollFrame)
-  child:SetWidth(200); child:SetHeight(1)
-  scrollFrame:SetScrollChild(child)
-  p.child = child
-  p.items = {}
-
-  -- Mouse wheel support
-  scrollFrame:EnableMouseWheel(true)
-  scrollFrame:SetScript("OnMouseWheel", function()
-    local sb = getglobal("TacticaRBExcludeScrollScrollBar")
-    if not sb then return end
-    local step = 20
-    if arg1 and arg1 > 0 then
-      sb:SetValue(sb:GetValue() - step)
-    else
-      sb:SetValue(sb:GetValue() + step)
-    end
-  end)
-
-  -- Buttons
-  local btnCancel = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-  btnCancel:SetWidth(70); btnCancel:SetHeight(22)
-  btnCancel:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 14, 12)
-  btnCancel:SetText("Cancel")
-  btnCancel:SetScript("OnClick", function() p:Hide() end)
-
-  local btnClear = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-  btnClear:SetWidth(70); btnClear:SetHeight(22)
-  btnClear:SetPoint("BOTTOM", p, "BOTTOM", 0, 12)
-  btnClear:SetText("Clear")
-  btnClear:SetScript("OnClick", function()
-    if p.items then
-      for i=1, table.getn(p.items) do
-        local it = p.items[i]
-        if it and it.cb then it.cb:SetChecked(false) end
-      end
-    end
-  end)
-
-  local btnApply = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")
-  btnApply:SetWidth(70); btnApply:SetHeight(22)
-  btnApply:SetPoint("BOTTOMRIGHT", p, "BOTTOMRIGHT", -14, 12)
-  btnApply:SetText("Apply")
-  btnApply:SetScript("OnClick", function()
-    RB._exclude = RB._exclude or {}
-    if p.items then
-      for i=1, table.getn(p.items) do
-        local it = p.items[i]
-        if it and it.name then
-          if it.cb:GetChecked() then RB._exclude[it.name] = true else RB._exclude[it.name] = nil end
-        end
-      end
-    end
-    RB.RefreshPreview()
-    p:Hide()
-  end)
-
-  RB_RefreshExcludeList()
-  p:Show()
 end
