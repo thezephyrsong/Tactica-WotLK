@@ -969,17 +969,7 @@ end
 
 function RB.InitRaidDropdown()
   UIDropDownMenu_Initialize(RB.ddRaid, function()
-    local raids = {}
-    local rn
-    for rn,_ in pairs(Tactica and Tactica.DefaultData or {}) do table.insert(raids, rn) end
-    table.sort(raids)
-
-    -- Always put "-CUSTOM-" at the top (all caps)
-    table.insert(raids, 1, "-CUSTOM-")
-
-    local i
-    for i=1,table.getn(raids) do
-      local raidName = raids[i]
+    local function AddRaidButton(raidName)
       local info = {}
       info.text = raidName; info.value = raidName
       info.func = function()
@@ -1032,6 +1022,29 @@ function RB.InitRaidDropdown()
         RB.InitGearScaleDropdown()
       end
       UIDropDownMenu_AddButton(info)
+    end
+
+    -- "-CUSTOM-" always pinned at the top, ungrouped
+    AddRaidButton("-CUSTOM-")
+
+    if Tactica and Tactica.BuildGroupedRaidList then
+      local items = Tactica:BuildGroupedRaidList()
+      local it
+      for _, it in ipairs(items) do
+        if it.isHeader then
+          UIDropDownMenu_AddButton({ text = "|cff33ff99-- "..it.text.." --|r", notClickable=1, isTitle=1 })
+        else
+          AddRaidButton(it.text)
+        end
+      end
+    else
+      -- Fallback if Tactica.lua hasn't loaded the grouping helper for some reason
+      local raids = {}
+      local rn
+      for rn,_ in pairs(Tactica and Tactica.DefaultData or {}) do table.insert(raids, rn) end
+      table.sort(raids)
+      local i
+      for i=1,table.getn(raids) do AddRaidButton(raids[i]) end
     end
   end)
 

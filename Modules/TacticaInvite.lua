@@ -1477,9 +1477,11 @@ local function FlushPendingRolesInGroup()
     if (inRaid[nm] or inParty[nm]) then
       setRole(nm, role)
 
-      local let = ROLE_LET[role] or "?"
-      local rnm = ROLE_NAME[role] or role or "?"
-      say(nm, "[Tactica]: You are marked as '"..let.."' ("..rnm..") in the group list.")
+      if not (TacticaDB and TacticaDB.Settings and TacticaDB.Settings.RoleWhisperEnabled == false) then
+        local let = ROLE_LET[role] or "?"
+        local rnm = ROLE_NAME[role] or role or "?"
+        say(nm, "[Tactica]: You are marked as '"..let.."' ("..rnm..") in the group list.")
+      end
 
       INV.pendingRoles[nm] = nil
       refreshRolesUI()

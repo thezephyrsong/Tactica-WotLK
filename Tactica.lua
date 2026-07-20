@@ -208,6 +208,82 @@ local function SetGreenTitle(fs, text)
   fs:SetText(TACTICA_TITLE_COLOR .. tostring(text or "") .. "|r")
 end
 
+-------------------------------------------------
+-- Raid -> Expansion grouping (used to build grouped raid dropdowns)
+-------------------------------------------------
+-- Ordered list of { label = "...", raids = { ... } }. Any raid present in
+-- Tactica.DefaultData but NOT listed here (e.g. something a user adds later)
+-- still shows up, bucketed into a trailing "Other" group, so nothing gets
+-- silently hidden.
+Tactica.RaidExpansions = {
+  { label = "Classic",
+    raids = {
+      "Molten Core", "Blackwing Lair", "Zul'Gurub",
+      "Ruins of Ahn'Qiraj", "Temple of Ahn'Qiraj",
+    }
+  },
+  { label = "The Burning Crusade",
+    raids = {
+      "Karazhan", "Gruul's Lair", "Magtheridon's Lair", "Zul'Aman",
+      "Serpentshrine Cavern", "Tempest Keep", "Mount Hyjal",
+      "Black Temple", "Sunwell Plateau",
+    }
+  },
+  { label = "Wrath of the Lich King",
+    raids = {
+      "Naxxramas", "Onyxia's Lair", "Obsidian Sanctum", "The Eye of Eternity",
+      "Vault of Archavon", "Ulduar", "Trial of the Crusader",
+      "Icecrown Citadel", "The Ruby Sanctum",
+    }
+  },
+  { label = "World Bosses",
+    raids = { "World Bosses" }
+  },
+}
+
+-- Builds an ordered, grouped raid list from Tactica.DefaultData:
+-- returns an array of { isHeader=true, text=... } and { isHeader=false, text=raidName }
+function Tactica:BuildGroupedRaidList()
+  local out = {}
+  local placed = {}
+
+  local g
+  for _, g in ipairs(self.RaidExpansions) do
+    local groupItems = {}
+    local r
+    for _, r in ipairs(g.raids) do
+      if self.DefaultData[r] then
+        table.insert(groupItems, r)
+        placed[r] = true
+      end
+    end
+    if table.getn(groupItems) > 0 then
+      table.insert(out, { isHeader = true, text = g.label })
+      local i
+      for i = 1, table.getn(groupItems) do
+        table.insert(out, { isHeader = false, text = groupItems[i] })
+      end
+    end
+  end
+
+  -- Anything in DefaultData not covered above (e.g. user-added raids)
+  local leftovers = {}
+  local rn
+  for rn,_ in pairs(self.DefaultData) do
+    if not placed[rn] then table.insert(leftovers, rn) end
+  end
+  if table.getn(leftovers) > 0 then
+    table.sort(leftovers, function(a,b) return string.lower(a) < string.lower(b) end)
+    table.insert(out, { isHeader = true, text = "Other" })
+    local i
+    for i = 1, table.getn(leftovers) do
+      table.insert(out, { isHeader = false, text = leftovers[i] })
+    end
+  end
+
+  return out
+end
+
 Tactica.Aliases = {
     -- Raids
     ["mc"] = "Molten Core",
@@ -1711,20 +1787,23 @@ function Tactica:CreateAddFrame()
     f:SetScript("OnShow", function()
         -- Initialize raid dropdown
         UIDropDownMenu_Initialize(raidDropdown, function()
-            local raids = {}
-            for rn,_ in pairs(Tactica.DefaultData) do table.insert(raids, rn) end
-            table.sort(raids)
-            for _, raidName in ipairs(raids) do
-                local raidName = raidName
-                local info = {
-                    text = raidName,
-                    func = function()
-                        Tactica.selectedRaid = raidName
-                        UIDropDownMenu_SetText(TacticaRaidDropdown, raidName)
-                        Tactica:UpdateBossDropdown(raidName)
-                    end
-                }
-                UIDropDownMenu_AddButton(info)
+            local items = Tactica:BuildGroupedRaidList()
+            local it
+            for _, it in ipairs(items) do
+                if it.isHeader then
+                    UIDropDownMenu_AddButton({ text = "|cff33ff99-- "..it.text.." --|r", notClickable=1, isTitle=1 })
+                else
+                    local raidName = it.text
+                    local info = {
+                        text = raidName,
+                        func = function()
+                            Tactica.selectedRaid = raidName
+                            UIDropDownMenu_SetText(TacticaRaidDropdown, raidName)
+                            Tactica:UpdateBossDropdown(raidName)
+                        end
+                    }
+                    UIDropDownMenu_AddButton(info)
+                end
             end
         end)
         
@@ -2027,20 +2106,23 @@ function Tactica:CreatePostFrame()
 	end
         -- Initialize raid dropdown
         UIDropDownMenu_Initialize(raidDropdown, function()
-            local raids = {}
-            for rn,_ in pairs(Tactica.DefaultData) do table.insert(raids, rn) end
-            table.sort(raids)
-            for _, raidName in ipairs(raids) do
-                local r = raidName
-                local info = {
-                    text = r,
-                    func = function()
-                        Tactica.selectedRaid = r
-                        UIDropDownMenu_SetText(TacticaPostRaidDropdown, r)
-                        Tactica:UpdatePostBossDropdown(r)
-                    end
-                }
-                UIDropDownMenu_AddButton(info)
+            local items = Tactica:BuildGroupedRaidList()
+            local it
+            for _, it in ipairs(items) do
+                if it.isHeader then
+                    UIDropDownMenu_AddButton({ text = "|cff33ff99-- "..it.text.." --|r", notClickable=1, isTitle=1 })
+                else
+                    local r = it.text
+                    local info = {
+                        text = r,
+                        func = function()
+                            Tactica.selectedRaid = r
+                            UIDropDownMenu_SetText(TacticaPostRaidDropdown, r)
+                            Tactica:UpdatePostBossDropdown(r)
+                        end
+                    }
+                    UIDropDownMenu_AddButton(info)
+                end
             end
         end)
         
