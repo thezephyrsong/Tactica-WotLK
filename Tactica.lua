@@ -213,9 +213,11 @@ Tactica.Aliases = {
     ["mc"] = "Molten Core",
     ["bwl"] = "Blackwing Lair",
     ["zg"] = "Zul'Gurub",
+	["za"] = "Zul'Aman",
     ["aq20"] = "Ruins of Ahn'Qiraj",
     ["aq40"] = "Temple of Ahn'Qiraj",
     ["ony"] = "Onyxia's Lair",
+	["os"] = "Obsidian Sanctum"
     ["naxx"] = "Naxxramas",
     ["kara"] = "Karazhan",
     ["world"] = "World Bosses",
@@ -2920,9 +2922,6 @@ Tactica.DefaultData = {
     },
 
     ["Onyxia's Lair"] = {
-        ["Broodcommander Axelus"] = {
-            ["Default"] = ""
-        },
         ["Onyxia"] = {
             ["Default"] = "Tanks: Tank near back wall during inital phase (P1) and when Onyxia lands again (P3). Turn away from raid (side of boss towards raid). During airphase (P2), grab all adds.\nDPS: Never stand behind or infront of Onyxia. Focus adds when up. CARE THREAT! Stable DPS and let tank get agro when Onyxia lands (P3).\nHealers: Focus on tank, and during airphase (P2) and landing phase (P3) on damage on raid.\nClass Specific: Fear Ward (Priests) and Tremor Totem (Shaman) prio for MT during landing phase (P3).\nBoss Ability: During airphase (P2) Onyxia will occasionally Fire Breath, with will likely kill anyone in it's path. To avoid it ALL must NEVER stand beneath or diagonally (in straight line) from where Onyxia currently is facing. Note the boss will move."
         }

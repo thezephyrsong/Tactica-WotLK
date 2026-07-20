@@ -87,17 +87,17 @@ end
 -------------------------------------------------
 local ALL_SIZES = { 10, 12, 15, 20, 25, 30, 35, 40 }
 local AllowedSizes = {
-  ["Molten Core"]          = { 20, 25, 30, 35, 40 },
-  ["Blackwing Lair"]       = { 20, 25, 30, 35, 40 },
-  ["Zul'Gurub"]            = { 12, 15, 20 },
-  ["Ruins of Ahn'Qiraj"]   = { 12, 15, 20 },
-  ["Temple of Ahn'Qiraj"]  = { 20, 25, 30, 35, 40 },
-  ["Onyxia's Lair"]        = { 12, 15, 20, 25, 30, 35, 40 },
-  ["Naxxramas"]            = { 30, 35, 40 },
-  ["Lower Karazhan Halls"] = { 10 },
-  ["Upper Karazhan Halls"] = { 35, 40 },
-  ["Emerald Sanctum"]      = { 30, 35, 40 },
-  ["World Bosses"]         = ALL_SIZES,
+  ["Molten Core"]          	= { 10, 20, 25 },
+  ["Blackwing Lair"]       	= { 20, 25 },
+  ["Zul'Gurub"]            	= { 12, 15, 20 },
+  ["Zul'Aman"]            	= { 10 }
+  ["Ruins of Ahn'Qiraj"]   	= { 20, 25 },
+  ["Temple of Ahn'Qiraj"]  	= { 20, 25 },
+  ["Onyxia's Lair"]        	= { 10, 20, 25 },
+  ["Obsidian Sanctum"]		= { 10, 20, 25 },
+  ["Naxxramas"]            	= { 30, 35, 40 },
+  ["Karazhan"] 				= { 10 },
+  ["World Bosses"]         	= ALL_SIZES,
 }
 
 -------------------------------------------------
@@ -105,7 +105,7 @@ local AllowedSizes = {
 -------------------------------------------------
 local BuilderDefaults = {
   ["Molten Core"] = {
-    size=40, tanks=3, healers=8, srs=2,
+    size=25, tanks=3, healers=8, srs=2,
     notes={ dispel=6, cleanse=0, decurse=6, tranq=2, purge=0, sheep=2, banish=2, shackle=0, sleep=0, fear=4 }
   },
   ["Blackwing Lair"] = {
@@ -114,6 +114,10 @@ local BuilderDefaults = {
   },
   ["Zul'Gurub"] = {
     size=20, tanks=2, healers=4, srs=2,
+    notes={ dispel=2, cleanse=2, decurse=4, tranq=0, purge=0, sheep=2, banish=0, shackle=0, sleep=0, fear=2 }
+  },
+  ["Zul'Aman"] = {
+    size=10, tanks=2, healers=2, srs=2,
     notes={ dispel=2, cleanse=2, decurse=4, tranq=0, purge=0, sheep=2, banish=0, shackle=0, sleep=0, fear=2 }
   },
   ["Ruins of Ahn'Qiraj"] = {
@@ -125,23 +129,19 @@ local BuilderDefaults = {
     notes={ dispel=6, cleanse=6, decurse=0, tranq=0, purge=0, sheep=2, banish=0, shackle=0, sleep=0, fear=6 }
   },
   ["Onyxia's Lair"] = {
-    size=40, tanks=1, healers=8, srs=1,
+    size=25, tanks=2, healers=4, srs=1,
     notes={ dispel=0, cleanse=0, decurse=0, tranq=0, purge=0, sheep=0, banish=0, sleep=0, fear=4 }
   },
   ["Naxxramas"] = {
     size=40, tanks=4, healers=10, srs=2,
     notes={ dispel=6, cleanse=6, decurse=6, tranq=2, purge=0, sheep=0, banish=0, shackle=3, sleep=0, fear=4 }
   },
-  ["Lower Karazhan Halls"] = {
+  ["Karazhan"] = {
     size=10, tanks=2, healers=2, srs=1,
     notes={ dispel=1, cleanse=2, decurse=2, tranq=0, purge=0, sheep=0, banish=0, sleep=0, fear=0 }
   },
-  ["Upper Karazhan Halls"] = {
-    size=40, tanks=4, healers=10, srs=2,
-    notes={ dispel=6, cleanse=6, decurse=6, tranq=1, purge=0, sheep=0, banish=2, shackle=3, sleep=0, fear=6 }
-  },
-  ["Emerald Sanctum"] = {
-    size=40, tanks=3, healers = { Normal = 8, HM = 10 }, srs=1,
+  ["Obsidian Sanctum"] = {
+    size=25, tanks=2, healers = { Normal = 4, HM = 5 }, srs=1,
     notes={ dispel=6, cleanse=6, decurse=6, tranq=0, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=0 }
   },
   ["World Bosses"] = {
@@ -155,13 +155,12 @@ local function SuggestGearScale(raid, esMode, worldBoss)
   if raid == "Molten Core"          then return 1 end
   if raid == "Blackwing Lair"       then return 1 end
   if raid == "Zul'Gurub"            then return 0 end
+  if raid == "Zul'Aman"            	then return 0 end
   if raid == "Ruins of Ahn'Qiraj"   then return 0 end
   if raid == "Temple of Ahn'Qiraj"  then return 2 end
   if raid == "Onyxia's Lair"        then return 0 end
   if raid == "Naxxramas"            then return 3 end
-  if raid == "Lower Karazhan Halls" then return 1 end
-  if raid == "Upper Karazhan Halls" then return 4 end
-  if raid == "Emerald Sanctum"      then return 1 end
+  if raid == "Karazhan" 			then return 1 end
   if raid == "World Bosses" then
     if worldBoss and worldBoss ~= "" then
       return 1
@@ -185,7 +184,7 @@ local function ComputeDefaults(raidName, raidSize, esMode)
 
   local tanksFixed = b.tanks
   local baseHealers = b.healers
-  if raidName == "Emerald Sanctum" and type(b.healers) == "table" then
+  if raidName == "Obsidian Sanctum" and type(b.healers) == "table" then
     local key = (esMode == "HM" or esMode == "Hard Mode") and "HM" or "Normal"
     baseHealers = b.healers[key] or b.healers.Normal or b.healers.HM or 8
   end
@@ -513,11 +512,11 @@ local function EffectiveRaidNameAndLabel()
     else
       return nil, nil
     end
-  elseif RB.state.raid == "Emerald Sanctum" then
+  elseif RB.state.raid == "Obsidian Sanctum" then
     if not RB.state.esMode then return nil, nil end
-    local short = ShortRaidLabel("Emerald Sanctum")
+    local short = ShortRaidLabel("Obsidian Sanctum")
     local mode  = (RB.state.esMode == "Normal") and " (Normal)" or " (HM)"
-    return "Emerald Sanctum", short .. mode
+    return "Obsidian Sanctum", short .. mode
   else
     local full = RB.state.raid
     if not full then return nil, nil end
@@ -902,7 +901,7 @@ function RB.InitRaidDropdown()
           RB.ddWBoss:Show(); RB.ddESMode:Hide()
           if RB.editCustomRaid then RB.editCustomRaid:Hide() end
           if RB.lblCustomRaidHint then RB.lblCustomRaidHint:Hide() end
-        elseif picked == "Emerald Sanctum" then
+        elseif picked == "Obsidian Sanctum" then
           RB.ddESMode:Show(); RB.ddWBoss:Hide()
           if RB.editCustomRaid then RB.editCustomRaid:Hide() end
           if RB.lblCustomRaidHint then RB.lblCustomRaidHint:Hide() end
@@ -2147,7 +2146,7 @@ function RB.Open()
 
   RB.InitRaidDropdown(); RB.InitWBossDropdown(); RB.InitESModeDropdown()
   if RB.state.raid == "World Bosses" then RB.ddWBoss:Show() else RB.ddWBoss:Hide() end
-  if RB.state.raid == "Emerald Sanctum" then RB.ddESMode:Show() else RB.ddESMode:Hide() end
+  if RB.state.raid == "Obsidian Sanctum" then RB.ddESMode:Show() else RB.ddESMode:Hide() end
   if RB.state.raid == "-CUSTOM-" then
     if RB.editCustomRaid then
       RB.editCustomRaid:SetText(RB.state.customRaidText or "")
@@ -2264,7 +2263,7 @@ function RB.LoadPreset(name)
     RB.ddWBoss:Show(); RB.ddESMode:Hide()
     if RB.editCustomRaid then RB.editCustomRaid:Hide() end
     if RB.lblCustomRaidHint then RB.lblCustomRaidHint:Hide() end
-  elseif RB.state.raid == "Emerald Sanctum" then
+  elseif RB.state.raid == "Obsidian Sanctum" then
     RB.ddESMode:Show(); RB.ddWBoss:Hide()
     if RB.editCustomRaid then RB.editCustomRaid:Hide() end
     if RB.lblCustomRaidHint then RB.lblCustomRaidHint:Hide() end
