@@ -86,18 +86,44 @@ end
 -- Allowed sizes per raid
 -------------------------------------------------
 local ALL_SIZES = { 10, 12, 15, 20, 25, 30, 35, 40 }
+-- These lists are quick-pick MINIMUM headcounts, not hard caps -- picking "25" just
+-- means "needs at least 25", not "exactly 25". Whether a raid is allowed to keep
+-- growing past that minimum with no ceiling is controlled by the Flex Mode checkbox
+-- (RB.state.flexMode, see BuildNeedString) -- that's the actual flex toggle, per-raid
+-- lists here are just the sizes offered in the dropdown for convenience. "Custom size"
+-- is always available too for anything not listed.
+local WOTLK_SIZES = { 10, 20, 25 }
 local AllowedSizes = {
+  -- Legacy vanilla raids, kept as-is for classic/twink play
   ["Molten Core"]          	= { 10, 20, 25 },
   ["Blackwing Lair"]       	= { 20, 25 },
   ["Zul'Gurub"]            	= { 12, 15, 20 },
-  ["Zul'Aman"]            	= { 10 },
   ["Ruins of Ahn'Qiraj"]   	= { 20, 25 },
   ["Temple of Ahn'Qiraj"]  	= { 20, 25 },
+  ["World Bosses"]         	= ALL_SIZES,
+
+  -- TBC raids -- 25-man tuned, but flexible minimums like the other TBC entries above
+  ["Karazhan"] 				= { 10 },
+  ["Zul'Aman"]            	= { 10 },
+  ["Gruul's Lair"]			= { 20, 25 },
+  ["Magtheridon's Lair"]	= { 20, 25 },
+  ["Serpentshrine Cavern"]	= { 20, 25 },
+  ["Tempest Keep"]			= { 20, 25 },
+  ["Mount Hyjal"]			= { 20, 25 },
+  ["Black Temple"]			= { 20, 25 },
+  ["Sunwell Plateau"]		= { 20, 25 },
+
+  -- WotLK raids -- 10-man and 25-man tuning, plus room for Triumvirate-style flex
+  -- (Naxxramas keeps its 30/35/40 "mega" options for oversized flex runs)
+  ["Naxxramas"]            	= { 10, 25, 30, 35, 40 },
   ["Onyxia's Lair"]        	= { 10, 20, 25 },
   ["Obsidian Sanctum"]		= { 10, 20, 25 },
-  ["Naxxramas"]            	= { 30, 35, 40 },
-  ["Karazhan"] 				= { 10 },
-  ["World Bosses"]         	= ALL_SIZES,
+  ["The Eye of Eternity"]	= WOTLK_SIZES,
+  ["Vault of Archavon"]	= WOTLK_SIZES,
+  ["Ulduar"]				= WOTLK_SIZES,
+  ["Trial of the Crusader"]	= WOTLK_SIZES,
+  ["Icecrown Citadel"]		= WOTLK_SIZES,
+  ["The Ruby Sanctum"]		= WOTLK_SIZES,
 }
 
 -------------------------------------------------
@@ -148,6 +174,66 @@ local BuilderDefaults = {
     size=40, tanks=1, healers=8, srs=1,
     notes={ dispel=1, cleanse=1, decurse=1, tranq=1, purge=1, sheep=1, banish=1, shackle=1, sleep=1, fear=1 }
   },
+
+  -------------------------------------------------
+  -- TBC 25-man raids
+  -------------------------------------------------
+  ["Gruul's Lair"] = {
+    size=25, tanks=2, healers=6, srs=1,
+    notes={ dispel=2, cleanse=2, decurse=2, tranq=0, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=0 }
+  },
+  ["Magtheridon's Lair"] = {
+    size=25, tanks=2, healers=6, srs=1,
+    notes={ dispel=2, cleanse=2, decurse=2, tranq=0, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=0 }
+  },
+  ["Serpentshrine Cavern"] = {
+    size=25, tanks=2, healers=6, srs=2,
+    notes={ dispel=4, cleanse=2, decurse=2, tranq=1, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=2 }
+  },
+  ["Tempest Keep"] = {
+    size=25, tanks=2, healers=6, srs=2,
+    notes={ dispel=2, cleanse=2, decurse=2, tranq=1, purge=1, sheep=0, banish=0, shackle=0, sleep=0, fear=0 }
+  },
+  ["Mount Hyjal"] = {
+    size=25, tanks=2, healers=6, srs=2,
+    notes={ dispel=2, cleanse=2, decurse=2, tranq=0, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=2 }
+  },
+  ["Black Temple"] = {
+    size=25, tanks=2, healers=6, srs=2,
+    notes={ dispel=4, cleanse=2, decurse=2, tranq=1, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=2 }
+  },
+  ["Sunwell Plateau"] = {
+    size=25, tanks=2, healers=7, srs=2,
+    notes={ dispel=4, cleanse=4, decurse=2, tranq=1, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=2 }
+  },
+
+  -------------------------------------------------
+  -- WotLK 10/25-man raids
+  -------------------------------------------------
+  ["The Eye of Eternity"] = {
+    size=25, tanks=2, healers=6, srs=2,
+    notes={ dispel=2, cleanse=2, decurse=2, tranq=0, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=0 }
+  },
+  ["Vault of Archavon"] = {
+    size=25, tanks=1, healers=5, srs=1,
+    notes={ dispel=2, cleanse=2, decurse=2, tranq=0, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=0 }
+  },
+  ["Ulduar"] = {
+    size=25, tanks=2, healers=6, srs=2,
+    notes={ dispel=6, cleanse=6, decurse=6, tranq=2, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=4 }
+  },
+  ["Trial of the Crusader"] = {
+    size=25, tanks=2, healers=5, srs=2,
+    notes={ dispel=4, cleanse=4, decurse=4, tranq=1, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=2 }
+  },
+  ["Icecrown Citadel"] = {
+    size=25, tanks=2, healers=6, srs=2,
+    notes={ dispel=6, cleanse=6, decurse=6, tranq=2, purge=0, sheep=0, banish=0, shackle=3, sleep=0, fear=4 }
+  },
+  ["The Ruby Sanctum"] = {
+    size=25, tanks=2, healers=5, srs=1,
+    notes={ dispel=2, cleanse=2, decurse=2, tranq=0, purge=0, sheep=0, banish=0, shackle=0, sleep=0, fear=0 }
+  },
 }
 
 local function SuggestGearScale(raid, esMode, worldBoss)
@@ -159,7 +245,6 @@ local function SuggestGearScale(raid, esMode, worldBoss)
   if raid == "Ruins of Ahn'Qiraj"   then return 0 end
   if raid == "Temple of Ahn'Qiraj"  then return 2 end
   if raid == "Onyxia's Lair"        then return 0 end
-  if raid == "Naxxramas"            then return 3 end
   if raid == "Karazhan" 			then return 1 end
   if raid == "World Bosses" then
     if worldBoss and worldBoss ~= "" then
@@ -167,6 +252,25 @@ local function SuggestGearScale(raid, esMode, worldBoss)
     end
     return nil
   end
+
+  -- TBC raid tiers
+  if raid == "Gruul's Lair"         then return 2 end
+  if raid == "Magtheridon's Lair"   then return 2 end
+  if raid == "Serpentshrine Cavern" then return 3 end
+  if raid == "Tempest Keep"         then return 3 end
+  if raid == "Mount Hyjal"          then return 4 end
+  if raid == "Black Temple"         then return 4 end
+  if raid == "Sunwell Plateau"      then return 5 end
+
+  -- WotLK raid tiers
+  if raid == "Naxxramas"            then return 6 end
+  if raid == "Obsidian Sanctum"     then return 6 end
+  if raid == "The Eye of Eternity"  then return 6 end
+  if raid == "Vault of Archavon"    then return 6 end
+  if raid == "Ulduar"               then return 7 end
+  if raid == "Trial of the Crusader" then return 8 end
+  if raid == "Icecrown Citadel"     then return 9 end
+  if raid == "The Ruby Sanctum"     then return 9 end
   return nil
 end
 
@@ -1910,11 +2014,15 @@ function RB.Open()
 
   local function GearTextFor(n)
     if n==0 then return "0 – Starter" end
-    if n==1 then return "1 – ZG/AQ20/MC" end
-    if n==2 then return "2 – BWL/ES/Kara10" end
-    if n==3 then return "3 – AQ40/T2.5" end
-    if n==4 then return "4 – Naxx/T3" end
-    if n==5 then return "5 – Kara40/T3.5" end
+    if n==1 then return "1 – ZG/AQ20/MC/Kara" end
+    if n==2 then return "2 – BWL/Gruul/Magtheridon" end
+    if n==3 then return "3 – AQ40/SSC/TK" end
+    if n==4 then return "4 – Hyjal/Black Temple" end
+    if n==5 then return "5 – Sunwell/T6.5" end
+    if n==6 then return "6 – Naxx25/OS/EoE/VoA/T7" end
+    if n==7 then return "7 – Ulduar/T8" end
+    if n==8 then return "8 – Trial of the Crusader/T9" end
+    if n==9 then return "9 – ICC/Ruby Sanctum/T10" end
     return "Select Minimum Gear Scale"
   end
 
@@ -1927,7 +2035,7 @@ function RB.Open()
         UIDropDownMenu_AddButton({ text="Suggested: Pick raid/boss", notClickable=1, isTitle=1 })
       end
       local i
-      for i=0,5 do
+      for i=0,9 do
         local info = {}
         info.text = GearTextFor(i); info.value = i
         info.func = function()
@@ -1965,11 +2073,15 @@ function RB.Open()
     RB_Print("|cff33ff99[Tactica]:|r Players will be asked to grade their gear from 0 to 5. They may reply with a number (e.g. '2') or a range (e.g. '2-3'). Ranges use the average; 1-3 = 2 while 1-2 = 1 (0.5 rounds down).")
     RB_Print("|cff33ff99[Tactica]:|r Grade Gear Scale:")
     RB_Print("|cff33ff99[Tactica]:|r 0 – Starter / Dungeon blues")
-    RB_Print("|cff33ff99[Tactica]:|r 1 – ZG / AQ20 / MC")
-    RB_Print("|cff33ff99[Tactica]:|r 2 – BWL / ES / Kara10")
-    RB_Print("|cff33ff99[Tactica]:|r 3 – AQ40 / T2.5")
-    RB_Print("|cff33ff99[Tactica]:|r 4 – Naxx / T3")
-    RB_Print("|cff33ff99[Tactica]:|r 5 – Kara40 / T3.5")
+    RB_Print("|cff33ff99[Tactica]:|r 1 – ZG / AQ20 / MC / Karazhan")
+    RB_Print("|cff33ff99[Tactica]:|r 2 – BWL / Gruul's / Magtheridon's")
+    RB_Print("|cff33ff99[Tactica]:|r 3 – AQ40 / Serpentshrine / Tempest Keep")
+    RB_Print("|cff33ff99[Tactica]:|r 4 – Mount Hyjal / Black Temple")
+    RB_Print("|cff33ff99[Tactica]:|r 5 – Sunwell Plateau")
+    RB_Print("|cff33ff99[Tactica]:|r 6 – Naxxramas / OS / EoE / VoA (T7)")
+    RB_Print("|cff33ff99[Tactica]:|r 7 – Ulduar (T8)")
+    RB_Print("|cff33ff99[Tactica]:|r 8 – Trial of the Crusader (T9)")
+    RB_Print("|cff33ff99[Tactica]:|r 9 – Icecrown Citadel / Ruby Sanctum (T10)")
   end
   -- Final full-green enabled line
   local function PrintGearEnabled()

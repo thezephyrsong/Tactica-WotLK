@@ -221,6 +221,19 @@ Tactica.Aliases = {
     ["naxx"] = "Naxxramas",
     ["kara"] = "Karazhan",
     ["world"] = "World Bosses",
+	["gruul"] = "Gruul's Lair",
+	["maggy"] = "Magtheridon's Lair",
+	["ssc"] = "Serpentshrine Cavern",
+	["tk"] = "Tempest Keep",
+	["hyjal"] = "Mount Hyjal",
+	["bt"] = "Black Temple",
+	["swp"] = "Sunwell Plateau",
+	["eoe"] = "The Eye of Eternity",
+	["voa"] = "Vault of Archavon",
+	["uld"] = "Ulduar",
+	["toc"] = "Trial of the Crusader",
+	["icc"] = "Icecrown Citadel",
+	["rs"] = "The Ruby Sanctum",
 
     -- Bosses
     ["rag"] = "Ragnaros",
@@ -308,6 +321,26 @@ Tactica:RegisterBossAliases("Temple of Ahn'Qiraj", "Twin Emperors", {
 -- Naxx:  Thane Korth'azz, Lady Blaumeux, Sir Zeliek, and Highlord Mograine (attack any) → 4HM
 Tactica:RegisterBossAliases("Naxxramas", "The Four Horsemen", {
   "Thane Korth'azz","Lady Blaumeux","Sir Zeliek","Highlord Mograine",
+}, "hostile")
+
+-- Ulduar: Steelbreaker, Runemaster Molgeim, Stormcaller Brundir (attack any) → Assembly of Iron
+Tactica:RegisterBossAliases("Ulduar", "Assembly of Iron", {
+  "Steelbreaker","Runemaster Molgeim","Stormcaller Brundir",
+}, "hostile")
+
+-- ToC: Gormok, Acidmaw, Dreadscale, Icehowl (attack any) → Northrend Beasts
+Tactica:RegisterBossAliases("Trial of the Crusader", "Northrend Beasts", {
+  "Gormok the Impaler","Acidmaw","Dreadscale","Icehowl",
+}, "hostile")
+
+-- ToC: Fjola Lightbane, Eydis Darkbane (attack any) → Twin Val'kyr
+Tactica:RegisterBossAliases("Trial of the Crusader", "Twin Val'kyr", {
+  "Fjola Lightbane","Eydis Darkbane",
+}, "hostile")
+
+-- ICC: Prince Keleseth, Prince Taldaram, Prince Valanar (attack any) → Blood Prince Council
+Tactica:RegisterBossAliases("Icecrown Citadel", "Blood Prince Council", {
+  "Prince Keleseth","Prince Taldaram","Prince Valanar",
 }, "hostile")
 
 -------------------------------------------------
@@ -1678,12 +1711,9 @@ function Tactica:CreateAddFrame()
     f:SetScript("OnShow", function()
         -- Initialize raid dropdown
         UIDropDownMenu_Initialize(raidDropdown, function()
-            local raids = {
-                "Molten Core", "Blackwing Lair", "Zul'Gurub",
-                "Ruins of Ahn'Qiraj", "Temple of Ahn'Qiraj",
-                "Onyxia's Lair", "Naxxramas", "Karazhan", 
-				"World Bosses"
-            }
+            local raids = {}
+            for rn,_ in pairs(Tactica.DefaultData) do table.insert(raids, rn) end
+            table.sort(raids)
             for _, raidName in ipairs(raids) do
                 local raidName = raidName
                 local info = {
@@ -1997,12 +2027,9 @@ function Tactica:CreatePostFrame()
 	end
         -- Initialize raid dropdown
         UIDropDownMenu_Initialize(raidDropdown, function()
-            local raids = {
-                "Molten Core", "Blackwing Lair", "Zul'Gurub",
-                "Ruins of Ahn'Qiraj", "Temple of Ahn'Qiraj",
-                "Onyxia's Lair", "Naxxramas", "Karazhan",
-				"World Bosses"
-            }
+            local raids = {}
+            for rn,_ in pairs(Tactica.DefaultData) do table.insert(raids, rn) end
+            table.sort(raids)
             for _, raidName in ipairs(raids) do
                 local r = raidName
                 local info = {
@@ -2916,7 +2943,37 @@ Tactica.DefaultData = {
         }
     },
     ["Karazhan"] = {
-        ["EMPTY"] = {
+        ["Attumen the Huntsman"] = {
+            ["Default"] = ""
+        },
+        ["Moroes"] = {
+            ["Default"] = ""
+        },
+        ["Maiden of Virtue"] = {
+            ["Default"] = ""
+        },
+        ["Opera Event"] = {
+            ["Default"] = ""
+        },
+        ["The Curator"] = {
+            ["Default"] = ""
+        },
+        ["Terestian Illhoof"] = {
+            ["Default"] = ""
+        },
+        ["Shade of Aran"] = {
+            ["Default"] = ""
+        },
+        ["Netherspite"] = {
+            ["Default"] = ""
+        },
+        ["Chess Event"] = {
+            ["Default"] = ""
+        },
+        ["Nightbane"] = {
+            ["Default"] = ""
+        },
+        ["Prince Malchezaar"] = {
             ["Default"] = ""
         }
     },
@@ -2925,5 +2982,133 @@ Tactica.DefaultData = {
         ["Onyxia"] = {
             ["Default"] = "Tanks: Tank near back wall during inital phase (P1) and when Onyxia lands again (P3). Turn away from raid (side of boss towards raid). During airphase (P2), grab all adds.\nDPS: Never stand behind or infront of Onyxia. Focus adds when up. CARE THREAT! Stable DPS and let tank get agro when Onyxia lands (P3).\nHealers: Focus on tank, and during airphase (P2) and landing phase (P3) on damage on raid.\nClass Specific: Fear Ward (Priests) and Tremor Totem (Shaman) prio for MT during landing phase (P3).\nBoss Ability: During airphase (P2) Onyxia will occasionally Fire Breath, with will likely kill anyone in it's path. To avoid it ALL must NEVER stand beneath or diagonally (in straight line) from where Onyxia currently is facing. Note the boss will move."
         }
+    },
+
+    ["Zul'Aman"] = {
+        ["Akil'zon"] = { ["Default"] = "" },
+        ["Nalorakk"] = { ["Default"] = "" },
+        ["Jan'alai"] = { ["Default"] = "" },
+        ["Halazzi"] = { ["Default"] = "" },
+        ["Hex Lord Malacrass"] = { ["Default"] = "" },
+        ["Zul'jin"] = { ["Default"] = "" }
+    },
+
+    -------------------------------------------------
+    -- TBC 25-man raids
+    -------------------------------------------------
+    ["Gruul's Lair"] = {
+        ["High King Maulgar"] = { ["Default"] = "" },
+        ["Gruul the Dragonkiller"] = { ["Default"] = "" }
+    },
+
+    ["Magtheridon's Lair"] = {
+        ["Magtheridon"] = { ["Default"] = "" }
+    },
+
+    ["Serpentshrine Cavern"] = {
+        ["Hydross the Unstable"] = { ["Default"] = "" },
+        ["The Lurker Below"] = { ["Default"] = "" },
+        ["Leotheras the Blind"] = { ["Default"] = "" },
+        ["Fathom-Lord Karathress"] = { ["Default"] = "" },
+        ["Morogrim Tidewalker"] = { ["Default"] = "" },
+        ["Lady Vashj"] = { ["Default"] = "" }
+    },
+
+    ["Tempest Keep"] = {
+        ["Al'ar"] = { ["Default"] = "" },
+        ["Void Reaver"] = { ["Default"] = "" },
+        ["High Astromancer Solarian"] = { ["Default"] = "" },
+        ["Kael'thas Sunstrider"] = { ["Default"] = "" }
+    },
+
+    ["Mount Hyjal"] = {
+        ["Rage Winterchill"] = { ["Default"] = "" },
+        ["Anetheron"] = { ["Default"] = "" },
+        ["Kaz'rogal"] = { ["Default"] = "" },
+        ["Azgalor"] = { ["Default"] = "" },
+        ["Archimonde"] = { ["Default"] = "" }
+    },
+
+    ["Black Temple"] = {
+        ["High Warlord Naj'entus"] = { ["Default"] = "" },
+        ["Supremus"] = { ["Default"] = "" },
+        ["Shade of Akama"] = { ["Default"] = "" },
+        ["Teron Gorefiend"] = { ["Default"] = "" },
+        ["Gurtogg Bloodboil"] = { ["Default"] = "" },
+        ["Reliquary of Souls"] = { ["Default"] = "" },
+        ["Mother Shahraz"] = { ["Default"] = "" },
+        ["The Illidari Council"] = { ["Default"] = "" },
+        ["Illidan Stormrage"] = { ["Default"] = "" }
+    },
+
+    ["Sunwell Plateau"] = {
+        ["Kalecgos"] = { ["Default"] = "" },
+        ["Brutallus"] = { ["Default"] = "" },
+        ["Felmyst"] = { ["Default"] = "" },
+        ["Eredar Twins"] = { ["Default"] = "" },
+        ["M'uru"] = { ["Default"] = "" },
+        ["Kil'jaeden"] = { ["Default"] = "" }
+    },
+
+    -------------------------------------------------
+    -- WotLK 10/25-man raids
+    -------------------------------------------------
+    ["Obsidian Sanctum"] = {
+        ["Sartharion"] = { ["Default"] = "" }
+    },
+
+    ["The Eye of Eternity"] = {
+        ["Malygos"] = { ["Default"] = "" }
+    },
+
+    ["Vault of Archavon"] = {
+        ["Archavon the Stone Watcher"] = { ["Default"] = "" },
+        ["Emalon the Storm Watcher"] = { ["Default"] = "" },
+        ["Koralon the Flame Watcher"] = { ["Default"] = "" },
+        ["Toravon the Ice Watcher"] = { ["Default"] = "" }
+    },
+
+    ["Ulduar"] = {
+        ["Flame Leviathan"] = { ["Default"] = "" },
+        ["Ignis the Furnace Master"] = { ["Default"] = "" },
+        ["Razorscale"] = { ["Default"] = "" },
+        ["XT-002 Deconstructor"] = { ["Default"] = "" },
+        ["Assembly of Iron"] = { ["Default"] = "" },
+        ["Kologarn"] = { ["Default"] = "" },
+        ["Auriaya"] = { ["Default"] = "" },
+        ["Hodir"] = { ["Default"] = "" },
+        ["Thorim"] = { ["Default"] = "" },
+        ["Freya"] = { ["Default"] = "" },
+        ["Mimiron"] = { ["Default"] = "" },
+        ["General Vezax"] = { ["Default"] = "" },
+        ["Yogg-Saron"] = { ["Default"] = "" },
+        ["Algalon the Observer"] = { ["Default"] = "" }
+    },
+
+    ["Trial of the Crusader"] = {
+        ["Northrend Beasts"] = { ["Default"] = "" },
+        ["Lord Jaraxxus"] = { ["Default"] = "" },
+        ["Faction Champions"] = { ["Default"] = "" },
+        ["Twin Val'kyr"] = { ["Default"] = "" },
+        ["Anub'arak"] = { ["Default"] = "" }
+    },
+
+    ["Icecrown Citadel"] = {
+        ["Lord Marrowgar"] = { ["Default"] = "" },
+        ["Lady Deathwhisper"] = { ["Default"] = "" },
+        ["Gunship Battle"] = { ["Default"] = "" },
+        ["Deathbringer Saurfang"] = { ["Default"] = "" },
+        ["Festergut"] = { ["Default"] = "" },
+        ["Rotface"] = { ["Default"] = "" },
+        ["Professor Putricide"] = { ["Default"] = "" },
+        ["Blood Prince Council"] = { ["Default"] = "" },
+        ["Blood-Queen Lana'thel"] = { ["Default"] = "" },
+        ["Valithria Dreamwalker"] = { ["Default"] = "" },
+        ["Sindragosa"] = { ["Default"] = "" },
+        ["The Lich King"] = { ["Default"] = "" }
+    },
+
+    ["The Ruby Sanctum"] = {
+        ["Halion"] = { ["Default"] = "" }
     }
 }
