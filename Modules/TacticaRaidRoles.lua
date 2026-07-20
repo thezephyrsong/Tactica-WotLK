@@ -451,9 +451,20 @@ local function AddMenuButton()
     if not exists then table.insert(menu, insertIndex or 3, key) end
   end
 
-  -- Insert into RAID menu
+  -- Insert into RAID menu (used by the default Blizzard raid frames)
   do
     local menu = UnitPopupMenus["RAID"]
+    ensureItem(menu, BUTTON_KEY_HEALER, 3)
+    ensureItem(menu, BUTTON_KEY_DPS,    4)
+    if not hideOurTank then ensureItem(menu, BUTTON_KEY_TANK, 5) end
+    ensureItem(menu, BUTTON_KEY_ML,      6)
+  end
+
+  -- Insert into RAID_PLAYER menu (used by CompactRaidFrame-style/retail-ported
+  -- raid frame addons, which build their right-click menu from this key instead
+  -- of "RAID")
+  do
+    local menu = UnitPopupMenus["RAID_PLAYER"]
     ensureItem(menu, BUTTON_KEY_HEALER, 3)
     ensureItem(menu, BUTTON_KEY_DPS,    4)
     if not hideOurTank then ensureItem(menu, BUTTON_KEY_TANK, 5) end
