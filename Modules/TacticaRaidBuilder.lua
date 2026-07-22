@@ -1624,6 +1624,141 @@ local function RB_IsLeaderOrAssist()
   return false
 end
 
+-------------------------------------------------
+-- Exclude List UI & Management
+-------------------------------------------------
+RB._exclude = RB._exclude or {}
+
+function RB_OpenExcludeList()
+  if RB.excludeFrame then
+    RB.excludeFrame:Show()
+    if RB.RefreshExcludeList then RB.RefreshExcludeList() end
+    return
+  end
+
+  local f = CreateFrame("Frame", "TacticaRBExcludeFrame", UIParent)
+  f:SetWidth(280)
+  f:SetHeight(320)
+  f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+  f:SetBackdrop({
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+    tile = true, tileSize = 16, edgeSize = 32,
+    insets = { left = 11, right = 12, top = 12, bottom = 11 }
+  })
+  f:SetBackdropColor(0, 0, 0, 1)
+  f:SetBackdropBorderColor(1, 1, 1, 1)
+  f:SetFrameStrata("DIALOG")
+  f:SetMovable(true)
+  f:EnableMouse(true)
+  f:RegisterForDrag("LeftButton")
+  f:SetScript("OnDragStart", function() this:StartMoving() end)
+  f:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+
+  local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  title:SetPoint("TOP", f, "TOP", 0, -12)
+  title:SetText("|cff33ff99Exclude List|r")
+  title:SetFontObject(GameFontNormalLarge)
+
+  local close = CreateFrame("Button", nil, f, "UIPanelCloseButton")
+  close:SetPoint("TOPRIGHT", f, "TOPRIGHT", -5, -5)
+  close:SetScript("OnClick", function() f:Hide() end)
+
+  local edit = CreateFrame("EditBox", "TacticaRBExcludeEdit", f, "InputBoxTemplate")
+  edit:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -45)
+  edit:SetWidth(150)
+  edit:SetHeight(20)
+  edit:SetAutoFocus(false)
+
+  local addBtn = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  addBtn:SetWidth(70)
+  addBtn:SetHeight(20)
+  addBtn:SetPoint("LEFT", edit, "RIGHT", 10, 0)
+  addBtn:SetText("Exclude")
+
+  local scrollFrame = CreateFrame("ScrollFrame", "TacticaRBExcludeScroll", f, "UIPanelScrollFrameTemplate")
+  scrollFrame:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -75)
+  scrollFrame:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -35, 45)
+
+  local content = CreateFrame("Frame", nil, scrollFrame)
+  content:SetWidth(210)
+  content:SetHeight(1)
+  scrollFrame:SetScrollChild(content)
+
+  f.content = content
+  f.entries = {}
+
+  RB.RefreshExcludeList = function()
+    for i = 1, table.getn(f.entries) do
+      f.entries[i]:Hide()
+    end
+
+    local list = {}
+    for name, isExcluded in pairs(RB._exclude) do
+      if isExcluded then
+        table.insert(list, name)
+      end
+    end
+    table.sort(list, function(a, b) return string.lower(a) < string.lower(b) end)
+
+    for i = 1, table.getn(list) do
+      local name = list[i]
+      local row = f.entries[i]
+      if not row then
+        row = CreateFrame("Frame", nil, content)
+        row:SetWidth(210)
+        row:SetHeight(20)
+
+        row.text = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        row.text:SetPoint("LEFT", row, "LEFT", 0, 0)
+
+        row.removeBtn = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+        row.removeBtn:SetWidth(55)
+        row.removeBtn:SetHeight(18)
+        row.removeBtn:SetPoint("RIGHT", row, "RIGHT", 0, 0)
+        row.removeBtn:SetText("Remove")
+
+        f.entries[i] = row
+      end
+
+      row:SetPoint("TOPLEFT", content, "TOPLEFT", 0, -((i - 1) * 22))
+      row.text:SetText(name)
+
+      local nameRef = name
+      row.removeBtn:SetScript("OnClick", function()
+        RB._exclude[nameRef] = nil
+        RB.RefreshExcludeList()
+        if RB.RefreshPreview then RB.RefreshPreview() end
+      end)
+
+      row:Show()
+    end
+    content:SetHeight(math.max(1, table.getn(list) * 22))
+  end
+
+  addBtn:SetScript("OnClick", function()
+    local txt = edit:GetText() or ""
+    txt = string.gsub(txt, "^%s*(.-)%s*$", "%1")
+    if txt ~= "" then
+      RB._exclude[txt] = true
+      edit:SetText("")
+      RB.RefreshExcludeList()
+      if RB.RefreshPreview then RB.RefreshPreview() end
+    end
+  end)
+
+  edit:SetScript("OnEnterPressed", function()
+    addBtn:Click()
+  end)
+
+  f:SetScript("OnShow", function()
+    RB.RefreshExcludeList()
+  end)
+
+  RB.excludeFrame = f
+  f:Show()
+end
+
 function RB.Open()
   if RB.frame then RB.frame:Show(); ApplyLockIcon(); RB.RefreshPreview(); RB_SyncInviteExtras(); if RB.UpdateSRDPostState then RB.UpdateSRDPostState() end; return end
   RB.ApplySaved()
